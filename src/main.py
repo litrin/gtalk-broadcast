@@ -31,8 +31,9 @@ class Gtalk(webapp.RequestHandler):
         aMessage = xmpp.Message(self.request.POST)
         sMessageFrom = aMessage.sender[:aMessage.sender.find('/')].lower()
         sMessage = aMessage.body
-
-        lAdmin = ['litrin@gmail.com', 'hanyuxia@gmail.com']
+        
+        #this is the admin account list
+        lAdmin = []
 
         #FriendList().add(sMessageFrom)       
         if sMessageFrom in lAdmin:
@@ -62,10 +63,10 @@ class Gtalk(webapp.RequestHandler):
 
     def userSetting(self, sCommand):
 
-        if sCommand.lower() == "off":
+        if sCommand.lower() == ":off":
             FriendList().delete(sMessageFrom)
 
-        if sCommand.lower() == "on":    
+        if sCommand.lower() == ":on":    
             FriendList().add(sMessageFrom) 
 
         return "OK!"
