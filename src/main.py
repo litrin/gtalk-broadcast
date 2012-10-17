@@ -16,9 +16,9 @@
 #
 
 import logging
-from DBModel import FriendList
-from WebPage import WebPage
-
+from Model import FriendList
+from Model import CacheUserList
+from google.appengine.api import taskqueue
 from google.appengine.api import xmpp
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
@@ -44,21 +44,25 @@ class Gtalk(webapp.RequestHandler):
         aMessage.reply(sMessageRely)
 
     def sendMessage(self, sMessage):
+        lUser = FriendList().getAllUniq():
         lStatus = []
-        for sUser in FriendList().getAll():
-            if sUser not in dStatus.keys():
-                bStatus = xmpp.send_message(sUser, sMessage)
-                if bStatus : lStatus.append(sUser)
 
-        iMessageCount = len(lStatus)
+        iMessageCount = len(lUser)
         if  iMessageCount < 500:
+            for sUser in lUser:
+                bStatus = xmpp.send_message(sUser, sMessage)
+                lStatus.append(sUser)
+
             logging.info(",".join(lStatus))
+
         else:
-            logging.info("total %s message sent!" % iMessageCount )
+            self.bgSend(lUser)  
+            logging.info("total %s message add to queue!" % iMessageCount )
 
         sMessageRely = "%s have already send message to %s users!" % (sMessageFrom, iMessageCount)
         
         return sMessageRely
+
 
     def userSetting(self, sCommand):
 
@@ -70,7 +74,46 @@ class Gtalk(webapp.RequestHandler):
 
         return "OK!"
 
-app = webapp.WSGIApplication([
+
+    def bgSend(self, lUser):
+        iGroup = 0 
+        loop = 0
+        lUserSplit = []
+
+        for sUser in lUser:
+            loop += 1
+            lUserSplit.append(sUser)
+
+            if loop % 100 == 0:
+                oCacheHandle = CacheUserList(iGroup)
+                oCacheHandle.add(lUserSplit)
+                taskqueue.add(url='/background', params={'group': iGroup})
+
+                lUserSplit = []
+                iGroup += 1
+
+        oCacheHandle = CacheUserList(iGroup)
+        oCacheHandle.add(lUserSplit)
+        taskqueue.add(url='/background', params={'group': iGroup})
+        
+        return True
+        
+
+class BGSend(webapp.RequestHandler):
+    def post(self):
+        sGroup = self.request.get('group')
+        oCacheHandle = CacheUserList(sGroup)
+        lUser = oCacheHandle.pop()
+        lStatus = []
+        for sUser in lUser:
+            bStatus = xmpp.send_message(sUser, sMessage)
+            lStatus.append(sUser)
+
+        logging.info(",".join(lStatus))
+
+        self.finish("ok!")
+
+app = webapp.WSGIApplication([ ('/background', BGSend),
                                ('/_ah/xmpp/message/chat/', Gtalk )],
                               debug=True)
 
