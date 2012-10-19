@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2007 Google Inc.
+# Copyright 2012 Litrin J.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,8 +18,9 @@
 import logging
 from Model import FriendList
 from Model import CacheUserList
+from Controller import SendMessage
+
 from google.appengine.api import taskqueue
-from google.appengine.api import xmpp
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
 
@@ -48,15 +49,16 @@ class Gtalk(webapp.RequestHandler):
         lStatus = []
 
         iMessageCount = len(lUser)
-        if  iMessageCount < 500:
-            for sUser in lUser:
-                bStatus = xmpp.send_message(sUser, sMessage)
-                lStatus.append(sUser)
-
+        xmppHandle = SendMessage()
+        xmppHandle.setMessage(sMessage)
+        
+        if iMessageCount < 500:
+            
+            lStatus = xmppHandle.sendMulit(lUser)
             logging.info(",".join(lStatus))
 
         else:
-            self.bgSend(lUser)  
+            xmppHandle.backGroundTask(lUser)
             logging.info("total %s message add to queue!" % iMessageCount )
 
         sMessageRely = "%s have already send message to %s users!" % (sMessageFrom, iMessageCount)
@@ -73,48 +75,11 @@ class Gtalk(webapp.RequestHandler):
             FriendList().add(sMessageFrom) 
 
         return "OK!"
-
-
-    def bgSend(self, lUser):
-        iGroup = 0 
-        loop = 0
-        lUserSplit = []
-
-        for sUser in lUser:
-            loop += 1
-            lUserSplit.append(sUser)
-
-            if loop % 100 == 0:
-                oCacheHandle = CacheUserList(iGroup)
-                oCacheHandle.add(lUserSplit)
-                taskqueue.add(url='/background', params={'group': iGroup})
-
-                lUserSplit = []
-                iGroup += 1
-
-        oCacheHandle = CacheUserList(iGroup)
-        oCacheHandle.add(lUserSplit)
-        taskqueue.add(url='/background', params={'group': iGroup})
-        
-        return True
         
 
-class BGSend(webapp.RequestHandler):
-    def post(self):
-        sGroup = self.request.get('group')
-        oCacheHandle = CacheUserList(sGroup)
-        lUser = oCacheHandle.pop()
-        lStatus = []
-        for sUser in lUser:
-            bStatus = xmpp.send_message(sUser, sMessage)
-            lStatus.append(sUser)
-
-        logging.info(",".join(lStatus))
-
-        self.finish("ok!")
-
-app = webapp.WSGIApplication([ ('/background', BGSend),
-                               ('/_ah/xmpp/message/chat/', Gtalk )],
+app = webapp.WSGIApplication([ 
+                               ('/_ah/xmpp/message/chat/', Gtalk )
+                              ],
                               debug=True)
 
 run_wsgi_app(app)

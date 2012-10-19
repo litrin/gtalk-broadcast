@@ -11,6 +11,9 @@ handlers:
   static_files: favicon.ico
   upload: favicon\.ico
 
+- url: /background
+  script: queue.py
+
 - url: .*
   script: main.py
 

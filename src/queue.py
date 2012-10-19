@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2007 Google Inc.
+# Copyright 2012 Litrin J.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,4 +15,30 @@
 # limitations under the License.
 #
 
+import logging
+from Model import FriendList
+from Model import CacheUserList
+from Comtroller import SendMessage
 
+from google.appengine.ext import webapp
+from google.appengine.ext.webapp.util import run_wsgi_app
+
+class BGSend(webapp.RequestHandler):
+    def post(self):
+        sGroup = self.request.get('group')
+        sMessage = self.request.get('message')
+
+        if sMessage != '':
+            xmppHandle = SendMessage(sMessage=sMessage)
+            lStatus = xmppHandle.sendMulit(CacheUserList(sGroup))
+            
+            logging.info(",".join(lStatus))
+
+        self.finish("ok!")
+
+app = webapp.WSGIApplication([ 
+                                ('/background', BGSend),
+                              ],
+                              debug=True)
+
+run_wsgi_app(app)
