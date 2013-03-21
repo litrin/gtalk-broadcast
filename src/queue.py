@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2012 Litrin J.
+# Copyright 2013 Litrin J.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -37,11 +37,11 @@ class BGSend(webapp.RequestHandler):
             lUser = cachehandle.pop()
 
             lStatus = xmppHandle.sendMulit(lUser)
-            logging.info(lStatus)
-
+            
 app = webapp.WSGIApplication([ 
                                 ('/background', BGSend),
                               ],
                               debug=True)
-
-run_wsgi_app(app)
+                              
+if __name__ == '__main__':
+    run_wsgi_app(app)

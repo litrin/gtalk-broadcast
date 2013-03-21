@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2012 Litrin J.
+# Copyright 2013 Litrin J.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -67,13 +67,15 @@ class SendMessage:
             loop += 1
             lUserSplit.append(sUser)
 
-            if loop % 100 == 0:
+            if loop & 0x7F == 0:
                 oCacheHandle = CacheUserList(iGroup)
                 oCacheHandle.add(lUserSplit)
+                
                 params={
                         'group': iGroup, 
                         'message': self.Message
                         }
+                        
                 taskqueue.add(url=sTaskUrl, params=params)
 
                 lUserSplit = []
@@ -81,11 +83,10 @@ class SendMessage:
 
         oCacheHandle = CacheUserList(iGroup)
         oCacheHandle.add(lUserSplit)
-        params={
+        params = {
                 'group': iGroup, 
                 'message': self.Message
                 }
         taskqueue.add(url=sTaskUrl, params=params)
-        logging.info('Q added!')
         
         return True

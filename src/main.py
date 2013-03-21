@@ -1,7 +1,8 @@
 #-*- coding:utf-8 -*-
+
 #!/usr/bin/env python
 #
-# Copyright 2012 Litrin J.
+# Copyright 2013 Litrin J.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,6 +23,7 @@ from Model import CacheUserList
 from Controller import SendMessage
 
 from google.appengine.api import taskqueue
+
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
 from google.appengine.api import xmpp
@@ -42,7 +44,6 @@ class Gtalk(webapp.RequestHandler):
         if sMessageFrom in lAdmin:
             sMessageRely = self.sendMessage(sMessage)
         else:
-            FriendList().add(sMessageFrom)
             sMessageRely = self.userSetting(sMessage, sMessageFrom)
             
         aMessage.reply(sMessageRely)
@@ -65,11 +66,9 @@ class Gtalk(webapp.RequestHandler):
             logging.info("total %s message add to queue!" % iMessageCount )
             
             sMessageRely = u"%s个用户将会收到消息，在%s秒之内请不要发送消息！" % (
-                    iMessageCount, int(iMessageCount / 500)+5)
-        
+                    iMessageCount, int(iMessageCount // 500) + 15)
         
         return sMessageRely
-
 
     def userSetting(self, sCommand, sMessageFrom):
         message = u'不支持输入的命令"%s",请输入on或off!' % sCommand
@@ -89,5 +88,8 @@ app = webapp.WSGIApplication([
                               ],
                               debug=True)
 
-run_wsgi_app(app)
+
+if __name__ == '__main__':
+    run_wsgi_app(app)
+
 
