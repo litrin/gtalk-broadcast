@@ -1,3 +1,4 @@
+#-*- coding:utf-8 -*-
 #!/usr/bin/env python
 #
 # Copyright 2012 Litrin J.
@@ -35,17 +36,17 @@ class Gtalk(webapp.RequestHandler):
         sMessageFrom = aMessage.sender[:aMessage.sender.find('/')].lower()
         sMessage = aMessage.body
 
-        lAdmin = set('litrin@gmail.com', 'hanyuxia@gmail.com')
+        lAdmin = ('litrin@gmail.com', 'hanyuxia@gmail.com')
 
         #FriendList().add(sMessageFrom)       
         if sMessageFrom in lAdmin:
             sMessageRely = self.sendMessage(sMessage)
         else:
             FriendList().add(sMessageFrom)
-            sMessageRely = self.userSetting(sMessage)
-
+            sMessageRely = self.userSetting(sMessage, sMessageFrom)
+            
         aMessage.reply(sMessageRely)
-
+        
     def sendMessage(self, sMessage):
         lUser = FriendList().getAllUniq()
         lStatus = []
@@ -54,29 +55,33 @@ class Gtalk(webapp.RequestHandler):
         xmppHandle = SendMessage()
         xmppHandle.setMessage(sMessage)
         
-        if iMessageCount < 500:
+        if iMessageCount < 300:
             
             lStatus = xmppHandle.sendMulit(lUser)
-            logging.info(",".join(lStatus))
+            sMessageRely = u"%s个用户将会收到消息!" % (iMessageCount)
 
         else:
             xmppHandle.backGroundTask(lUser)
             logging.info("total %s message add to queue!" % iMessageCount )
-
-        sMessageRely = "%s have already send message to %s users!" % (sMessageFrom, iMessageCount)
+            
+            sMessageRely = u"%s个用户将会收到消息，在%s秒之内请不要发送消息！" % (
+                    iMessageCount, int(iMessageCount / 500)+5)
+        
         
         return sMessageRely
 
 
-    def userSetting(self, sCommand):
-
-        if sCommand.lower() == "off":
+    def userSetting(self, sCommand, sMessageFrom):
+        message = u'不支持输入的命令"%s",请输入on或off!' % sCommand
+        if sCommand.lower() in ("off", "/off"):
             FriendList().delete(sMessageFrom)
+            message = u'静默模式已被激活！'
 
-        if sCommand.lower() == "on":    
-            FriendList().add(sMessageFrom) 
+        if sCommand.lower() in ("on", "/on"):    
+            FriendList().add(sMessageFrom)
+            message = u'收听模式已被激活！'
 
-        return "OK!"
+        return message
         
 
 app = webapp.WSGIApplication([ 

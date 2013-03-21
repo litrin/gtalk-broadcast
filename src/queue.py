@@ -16,25 +16,28 @@
 #
 
 import logging
+
 from Model import FriendList
 from Model import CacheUserList
-from Comtroller import SendMessage
+from Controller import SendMessage
 
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
 
 class BGSend(webapp.RequestHandler):
     def post(self):
-        sGroup = self.request.get('group')
-        sMessage = self.request.get('message')
-
+        sGroup = self.request.get('group', None)
+        sMessage = self.request.get('message', None)
+        logging.info("Get %s for %s" % (sGroup, sMessage))
+        if sGroup is None or sMessage is None: return 
+        
         if sMessage != '':
             xmppHandle = SendMessage(sMessage=sMessage)
-            lStatus = xmppHandle.sendMulit(CacheUserList(sGroup))
-            
-            logging.info(",".join(lStatus))
+            cachehandle = CacheUserList(sGroup)
+            lUser = cachehandle.pop()
 
-        self.finish("ok!")
+            lStatus = xmppHandle.sendMulit(lUser)
+            logging.info(lStatus)
 
 app = webapp.WSGIApplication([ 
                                 ('/background', BGSend),

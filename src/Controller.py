@@ -15,7 +15,10 @@
 # limitations under the License.
 #
 
-from google.appengine.ext import webapp
+import logging
+from google.appengine.api import taskqueue
+from Model import CacheUserList
+from google.appengine.api import xmpp
 
 class SendMessage:
     
@@ -44,10 +47,10 @@ class SendMessage:
         return False
             
     def sendMulit(self, lUser):
-        if self.Message is not None:
+        if self.Message is None:
             return []
-            
-        lStatus = 0
+        
+        lStatus =[]
         for sUser in lUser:
             if xmpp.send_message(sUser, self.Message) == xmpp.NO_ERROR:
                 lStatus.append(sUser)
@@ -67,14 +70,22 @@ class SendMessage:
             if loop % 100 == 0:
                 oCacheHandle = CacheUserList(iGroup)
                 oCacheHandle.add(lUserSplit)
-                taskqueue.add(url=sTaskUrl, params={'group': iGroup, 'message': self.Message})
+                params={
+                        'group': iGroup, 
+                        'message': self.Message
+                        }
+                taskqueue.add(url=sTaskUrl, params=params)
 
                 lUserSplit = []
                 iGroup += 1
 
         oCacheHandle = CacheUserList(iGroup)
         oCacheHandle.add(lUserSplit)
-        taskqueue.add(url=sTaskUrl, params={'group': iGroup, 'message': self.Message})
+        params={
+                'group': iGroup, 
+                'message': self.Message
+                }
+        taskqueue.add(url=sTaskUrl, params=params)
         logging.info('Q added!')
         
         return True
