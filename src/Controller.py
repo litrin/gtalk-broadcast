@@ -39,17 +39,17 @@ class SendMessage:
     
     def send(self):
         if self.User is not None and self.Message is not None:
-            return xmpp.send_message(self.User, self.Message)
+            return xmpp.send_message(self.User, self.Message) == xmpp.NO_ERROR
             
         return False
             
     def sendMulit(self, lUser):
-        if self.Message not None:
+        if self.Message is not None:
             return []
             
         lStatus = 0
         for sUser in lUser:
-            if xmpp.send_message(sUser, self.Message):
+            if xmpp.send_message(sUser, self.Message) == xmpp.NO_ERROR:
                 lStatus.append(sUser)
                 
         return lStatus
@@ -75,5 +75,6 @@ class SendMessage:
         oCacheHandle = CacheUserList(iGroup)
         oCacheHandle.add(lUserSplit)
         taskqueue.add(url=sTaskUrl, params={'group': iGroup, 'message': self.Message})
+        logging.info('Q added!')
         
         return True

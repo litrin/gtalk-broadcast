@@ -23,6 +23,8 @@ from Controller import SendMessage
 from google.appengine.api import taskqueue
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
+from google.appengine.api import xmpp
+
 
 class Gtalk(webapp.RequestHandler):
     def post(self):
@@ -33,7 +35,7 @@ class Gtalk(webapp.RequestHandler):
         sMessageFrom = aMessage.sender[:aMessage.sender.find('/')].lower()
         sMessage = aMessage.body
 
-        lAdmin = ['litrin@gmail.com', 'hanyuxia@gmail.com']
+        lAdmin = set('litrin@gmail.com', 'hanyuxia@gmail.com')
 
         #FriendList().add(sMessageFrom)       
         if sMessageFrom in lAdmin:
@@ -45,7 +47,7 @@ class Gtalk(webapp.RequestHandler):
         aMessage.reply(sMessageRely)
 
     def sendMessage(self, sMessage):
-        lUser = FriendList().getAllUniq():
+        lUser = FriendList().getAllUniq()
         lStatus = []
 
         iMessageCount = len(lUser)

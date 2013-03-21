@@ -1,10 +1,13 @@
 application: czfxhweb
-version: 1
+version: 2
 runtime: python
 api_version: 1
 
 inbound_services:
 - xmpp_message
+- xmpp_presence
+- xmpp_subscribe
+- xmpp_error
 
 handlers:
 - url: /favicon\.ico
